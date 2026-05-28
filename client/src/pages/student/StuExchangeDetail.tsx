@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Button, Tag, Typography, message, Modal, Spin } from 'antd';
-import { GiftOutlined } from '@ant-design/icons';
+import { Descriptions, Button, Tag, message, Modal, Spin } from 'antd';
+import { GiftOutlined, SwapOutlined } from '@ant-design/icons';
 import { studentApi } from '../../api/endpoints';
-
-const { Title } = Typography;
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -60,47 +58,76 @@ export default function StuExchangeDetail() {
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <Title level={4}>资源详情</Title>
-      <Card>
+      <div className="game-title" style={{ marginBottom: 20, fontSize: 18 }}>
+        <GiftOutlined style={{ marginRight: 8 }} />
+        资源详情
+      </div>
+
+      <div className="game-card" style={{ padding: 0, overflow: 'hidden' }}>
         {resource?.imageUrl ? (
-          <img alt={resource.name} src={resource.imageUrl} style={{ width: '100%', maxHeight: 300, objectFit: 'cover', borderRadius: 8, marginBottom: 16 }} />
+          <img alt={resource.name} src={resource.imageUrl}
+            style={{ width: '100%', maxHeight: 300, objectFit: 'cover' }} />
         ) : (
-          <div style={{ width: '100%', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: 8, marginBottom: 16 }}>
-            <GiftOutlined style={{ fontSize: 64, color: '#ccc' }} />
+          <div style={{
+            width: '100%', height: 200, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', background: 'rgba(0,212,255,0.04)',
+          }}>
+            <GiftOutlined style={{ fontSize: 64, color: 'rgba(0,212,255,0.15)' }} />
           </div>
         )}
 
-        <Descriptions column={1} bordered size="small">
-          <Descriptions.Item label="资源名称">{resource?.name}</Descriptions.Item>
-          <Descriptions.Item label="描述">{resource?.description || '暂无描述'}</Descriptions.Item>
-          <Descriptions.Item label="所需积分">
-            <Tag color="blue" style={{ fontSize: 16 }}>{resource?.pointsRequired} 积分</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="当前库存">
-            <Tag color={resource?.stock > 0 ? 'green' : 'red'}>{resource?.stock > 0 ? `${resource.stock} 件` : '已售罄'}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="我的积分">
-            {overview?.currentPoints ?? 0} 积分
-          </Descriptions.Item>
-        </Descriptions>
+        <div style={{ padding: 24 }}>
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="资源名称">{resource?.name}</Descriptions.Item>
+            <Descriptions.Item label="描述">{resource?.description || '暂无描述'}</Descriptions.Item>
+            <Descriptions.Item label="所需积分">
+              <Tag color="blue" style={{ fontSize: 16, padding: '2px 12px' }}>
+                {resource?.pointsRequired} 积分
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="当前库存">
+              <Tag color={resource?.stock > 0 ? 'green' : 'red'}>
+                {resource?.stock > 0 ? `${resource.stock} 件` : '已售罄'}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="我的积分">
+              <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 16, fontWeight: 600 }}>
+                {overview?.currentPoints ?? 0}
+              </span> 积分
+            </Descriptions.Item>
+          </Descriptions>
 
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          {!canExchange && (
-            <div style={{ marginBottom: 12, color: '#ff4d4f' }}>
-              {overview?.currentPoints < resource?.pointsRequired ? '积分不足' : '库存不足'}
-            </div>
-          )}
-          <Button
-            type="primary"
-            size="large"
-            disabled={!canExchange}
-            loading={submitting}
-            onClick={handleExchange}
-          >
-            立即兑换
-          </Button>
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            {!canExchange && (
+              <div style={{
+                marginBottom: 12, color: '#ef4444', fontSize: 13,
+                padding: '8px 16px', background: 'rgba(239,68,68,0.08)',
+                borderRadius: 6, display: 'inline-block',
+              }}>
+                {overview?.currentPoints < resource?.pointsRequired ? '积分不足' : '库存不足'}
+              </div>
+            )}
+            <Button
+              type="primary"
+              size="large"
+              disabled={!canExchange}
+              loading={submitting}
+              onClick={handleExchange}
+              icon={<SwapOutlined />}
+              style={{
+                height: 48, borderRadius: 8, fontSize: 16, fontWeight: 700,
+                fontFamily: 'Orbitron, "Microsoft YaHei", sans-serif',
+                letterSpacing: 2, marginTop: 8,
+                background: canExchange ? 'linear-gradient(135deg, #f59e0b, #d97706)' : undefined,
+                border: 'none',
+                boxShadow: canExchange ? '0 0 25px rgba(245,158,11,0.3)' : undefined,
+              }}
+            >
+              确认兑换
+            </Button>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

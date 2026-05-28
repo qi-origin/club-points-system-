@@ -69,9 +69,31 @@ function AppRoutes() {
   );
 }
 
+const darkTheme = {
+  token: {
+    colorPrimary: '#00d4ff',
+    colorSuccess: '#22c55e',
+    colorWarning: '#f59e0b',
+    colorError: '#ef4444',
+    colorInfo: '#00d4ff',
+    colorBgBase: '#0a0a1a',
+    colorBgContainer: 'rgba(15, 15, 40, 0.85)',
+    colorBgElevated: 'rgba(20, 20, 50, 0.92)',
+    colorTextBase: '#e0e0f0',
+    colorText: '#e0e0f0',
+    colorTextSecondary: '#8888aa',
+    colorBorder: 'rgba(0, 212, 255, 0.2)',
+    colorBorderSecondary: 'rgba(0, 212, 255, 0.12)',
+    borderRadius: 8,
+    fontFamily: "'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif",
+    colorLink: '#00d4ff',
+    colorLinkHover: '#22d8ff',
+  },
+};
+
 export default function App() {
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider locale={zhCN} theme={darkTheme}>
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
