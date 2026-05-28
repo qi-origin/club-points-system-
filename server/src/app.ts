@@ -34,17 +34,24 @@ app.post(
       res.status(400).json({ error: '文件上传失败' });
       return;
     }
-    const url = `/uploads/${req.file.filename}`;
-    res.json({ url, filename: req.file.originalname });
+    if (isVercel && req.file.buffer) {
+      // On Vercel, return base64 data URL (filesystem is read-only)
+      const b64 = req.file.buffer.toString('base64');
+      const dataUrl = `data:${req.file.mimetype};base64,${b64}`;
+      res.json({ url: dataUrl, filename: req.file.originalname });
+    } else {
+      const url = `/uploads/${req.file.filename}`;
+      res.json({ url, filename: req.file.originalname });
+    }
   }
 );
 
-// Serve frontend static files in production
-if (isProduction) {
+// Serve frontend static files in production (standalone mode, not Vercel)
+const isVercel = !!process.env.VERCEL;
+if (isProduction && !isVercel) {
   const clientDist = path.join(__dirname, '../../client/dist');
   if (fs.existsSync(clientDist)) {
     app.use(express.static(clientDist));
-    // SPA fallback: all non-API routes serve index.html
     app.get('*', (_req, res) => {
       res.sendFile(path.join(clientDist, 'index.html'));
     });
@@ -55,8 +62,11 @@ if (isProduction) {
 // Error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT} [${isProduction ? 'production' : 'development'}]`);
-});
+// Only listen when not running on Vercel (serverless)
+if (!isVercel) {
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT} [${isProduction ? 'production' : 'development'}]`);
+  });
+}
 
 export default app;

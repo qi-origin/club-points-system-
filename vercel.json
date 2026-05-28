@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd server && npm install && npx prisma generate && npm run build && cd ../client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "echo 'Dependencies installed in buildCommand'",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ]
+}
