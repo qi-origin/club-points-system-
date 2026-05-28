@@ -4,49 +4,42 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create default admin
-  const passwordHash = await bcrypt.hash('admin123', 10);
-  await prisma.admin.upsert({
-    where: { username: 'admin' },
-    update: {},
+  const passwordHash = await bcrypt.hash('xql1234', 10);
+
+  // Find old default admin
+  const oldAdmin = await prisma.admin.findUnique({ where: { username: 'admin' } });
+
+  // Create or update the real admin
+  const realAdmin = await prisma.admin.upsert({
+    where: { username: '夏乾龙' },
+    update: { passwordHash, role: 'super_admin' },
     create: {
-      username: 'admin',
+      username: '夏乾龙',
       passwordHash,
       role: 'super_admin',
     },
   });
 
-  // Create sample task rules (placeholder — admin fills in real ones)
-  const tasks = [
-    { name: '社团公众号推文转发', points: 5, description: '转发指定推文至朋友圈并截图' },
-    { name: '活动志愿者', points: 10, description: '参与社团活动的组织与执行工作' },
-    { name: '社团宣传素材制作', points: 15, description: '制作海报、视频等宣传素材' },
-  ];
-
-  for (const task of tasks) {
-    await prisma.taskRule.upsert({
-      where: { id: tasks.indexOf(task) + 1 },
-      update: {},
-      create: task,
-    });
+  // Migrate records from old admin to new admin (if old admin exists and is different)
+  if (oldAdmin && oldAdmin.id !== realAdmin.id) {
+    await prisma.operationLog.updateMany({ where: { adminId: oldAdmin.id }, data: { adminId: realAdmin.id } });
+    await prisma.pointApplication.updateMany({ where: { reviewerId: oldAdmin.id }, data: { reviewerId: realAdmin.id } });
+    await prisma.pointRecord.updateMany({ where: { operatorId: oldAdmin.id }, data: { operatorId: realAdmin.id } });
+    await prisma.exchangeOrder.updateMany({ where: { handlerId: oldAdmin.id }, data: { handlerId: realAdmin.id } });
+    await prisma.admin.delete({ where: { id: oldAdmin.id } });
   }
 
-  // Create sample students for testing
-  const sampleStudents = [
-    { name: '张三', studentNo: '2024001' },
-    { name: '李四', studentNo: '2024002' },
-    { name: '王五', studentNo: '2024003' },
-  ];
+  // Remove test students
+  await prisma.student.deleteMany({
+    where: { studentNo: { in: ['2024001', '2024002', '2024003'] } },
+  });
 
-  for (const s of sampleStudents) {
-    await prisma.student.upsert({
-      where: { studentNo: s.studentNo },
-      update: {},
-      create: s,
-    });
-  }
+  // Remove old sample task rules
+  await prisma.taskRule.deleteMany({
+    where: { id: { in: [1, 2, 3] } },
+  });
 
-  console.log('Seed data created successfully');
+  console.log('Seed completed: admin=' + realAdmin.username);
 }
 
 main()

@@ -231,18 +231,6 @@ export default function LoginPage() {
           </Form>
         )}
 
-        {/* Test account hint */}
-        <div style={{
-          textAlign: 'center',
-          color: '#666688',
-          fontSize: 11,
-          marginTop: 16,
-          padding: '8px 12px',
-          background: 'rgba(255,255,255,0.02)',
-          borderRadius: 6,
-        }}>
-          测试账号 ｜ 学生：张三 / 2024001 ｜ 管理员：admin / admin123
-        </div>
       </div>
 
       {/* Add shimmer animation */}
