@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id          Int       @id @default(autoincrement())
+  name        String
+  studentNo   String    @unique @map("student_no")
+  status      Int       @default(1) // 1=正常 0=禁用
+  totalEarned Int       @default(0) @map("total_earned")
+  totalSpent  Int       @default(0) @map("total_spent")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  pointApplications PointApplication[]
+  pointRecords      PointRecord[]
+  exchangeOrders    ExchangeOrder[]
+
+  @@map("students")
+}
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("admin") // admin / super_admin
+  status       Int      @default(1) // 1=正常 0=禁用
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  pointApplications PointApplication[] @relation("Reviewer")
+  pointRecords      PointRecord[]      @relation("Operator")
+  exchangeOrders    ExchangeOrder[]    @relation("Handler")
+  operationLogs     OperationLog[]
+
+  @@map("admins")
+}
+
+model TaskRule {
+  id          Int      @id @default(autoincrement())
+  name        String
+  points      Int
+  description String?
+  status      Int      @default(1) // 1=启用 0=停用
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  pointApplications PointApplication[]
+
+  @@map("task_rules")
+}
+
+model PointApplication {
+  id              Int       @id @default(autoincrement())
+  studentId       Int       @map("student_id")
+  taskRuleId      Int?      @map("task_rule_id")
+  taskDescription String    @map("task_description")
+  pointsApplied   Int       @map("points_applied")
+  evidenceUrl     String?   @map("evidence_url")
+  status          Int       @default(0) // 0=待审核 1=通过 2=驳回
+  reviewerId      Int?      @map("reviewer_id")
+  reviewComment   String?   @map("review_comment")
+  reviewedAt      DateTime? @map("reviewed_at")
+  idempotencyKey  String    @unique @map("idempotency_key")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  student  Student  @relation(fields: [studentId], references: [id])
+  taskRule TaskRule? @relation(fields: [taskRuleId], references: [id])
+  reviewer Admin?   @relation("Reviewer", fields: [reviewerId], references: [id])
+
+  @@index([studentId])
+  @@index([status])
+  @@map("point_applications")
+}
+
+model PointRecord {
+  id           Int      @id @default(autoincrement())
+  studentId    Int      @map("student_id")
+  type         String   // earn / spend / refund
+  amount       Int
+  balanceAfter Int      @map("balance_after")
+  sourceType   String   @map("source_type") // application / manual / exchange / exchange_cancel
+  sourceId     Int?     @map("source_id")
+  operatorId   Int?     @map("operator_id")
+  remark       String   @default("")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  student  Student @relation(fields: [studentId], references: [id])
+  operator Admin?  @relation("Operator", fields: [operatorId], references: [id])
+
+  @@index([studentId])
+  @@index([type])
+  @@index([sourceType, sourceId])
+  @@map("point_records")
+}
+
+model Resource {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  pointsRequired Int      @map("points_required")
+  stock          Int      @default(0)
+  totalStock     Int      @default(0) @map("total_stock")
+  imageUrl       String?  @map("image_url")
+  status         Int      @default(1) // 1=上架 0=下架
+  version        Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  exchangeOrders ExchangeOrder[]
+
+  @@map("resources")
+}
+
+model ExchangeOrder {
+  id             Int       @id @default(autoincrement())
+  studentId      Int       @map("student_id")
+  resourceId     Int       @map("resource_id")
+  pointsCost     Int       @map("points_cost")
+  status         Int       @default(0) // 0=待处理 1=已完成 2=已取消
+  handlerId      Int?      @map("handler_id")
+  handledAt      DateTime? @map("handled_at")
+  idempotencyKey String    @unique @map("idempotency_key")
+  cancelReason   String?   @map("cancel_reason")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  student  Student  @relation(fields: [studentId], references: [id])
+  resource Resource @relation(fields: [resourceId], references: [id])
+  handler  Admin?   @relation("Handler", fields: [handlerId], references: [id])
+
+  @@index([studentId])
+  @@index([resourceId])
+  @@index([status])
+  @@map("exchange_orders")
+}
+
+model OperationLog {
+  id         Int      @id @default(autoincrement())
+  adminId    Int      @map("admin_id")
+  action     String   // approve / reject / manual_add / manual_deduct / create_resource / update_resource / handle_order / create_student / toggle_student
+  targetType String   @map("target_type") // student / application / resource / order
+  targetId   Int?     @map("target_id")
+  detail     String?  // JSON string
+  ip         String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([action])
+  @@map("operation_logs")
+}
