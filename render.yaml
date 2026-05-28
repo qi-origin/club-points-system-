@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: club-points-system
+    env: node
+    buildCommand: |
+      cd server && npm install && npx prisma generate && npm run build && cd ../client && npm install && npm run build
+    startCommand: cd server && npx prisma migrate deploy && npx tsx prisma/seed.ts && NODE_ENV=production node dist/app.js
+    envVars:
+      - key: DATABASE_URL
+        value: file:/app/data/dev.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
